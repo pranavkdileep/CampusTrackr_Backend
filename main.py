@@ -1,15 +1,9 @@
-from typing import List  
-from fastapi import FastAPI, HTTPException, File, UploadFile  
-from pydantic import BaseModel  
-from dotenv import load_dotenv  
-import os  
+from flask import Flask, request, jsonify  
 import MySQLdb  
-import csv  
+import os  
   
-load_dotenv()  
-app = FastAPI()  
+app = Flask(__name__)  
   
-# Establish a connection to the database  
 def get_db_connection():  
     connection = MySQLdb.connect(  
         host=os.getenv("DB_HOST"),  
@@ -24,121 +18,85 @@ def get_db_connection():
     )  
     return connection  
   
-class Student(BaseModel):  
-    name: str
+@app.route('/subjects', methods=['GET', 'POST'])  
+def manage_subjects():  
+    conn = get_db_connection()  
+    cursor = conn.cursor(MySQLdb.cursors.DictCursor)  
+      
+    if request.method == 'GET':  
+        cursor.execute('SELECT * FROM subjects')  
+        subjects = cursor.fetchall()  
+        return jsonify(subjects)  
+      
+    if request.method == 'POST':  
+        new_subject = request.json['subject_name']  
+        cursor.execute('INSERT INTO subjects (subject_name) VALUES (%s)', (new_subject,))  
+        conn.commit()  
+        return jsonify({"message": "Subject added successfully"}), 201  
   
-class Subject(BaseModel):  
-    subject_name: str 
+@app.route('/students', methods=['GET', 'POST'])  
+def manage_students():  
+    conn = get_db_connection()  
+    cursor = conn.cursor(MySQLdb.cursors.DictCursor)  
+      
+    if request.method == 'GET':  
+        cursor.execute('SELECT * FROM students')  
+        students = cursor.fetchall()  
+        return jsonify(students)  
+      
+    if request.method == 'POST':  
+        new_student = request.json['student_name']  
+        subject_id = request.json['subject_id']  
+        cursor.execute('INSERT INTO students (student_name, subject_id) VALUES (%s, %s)', (new_student, subject_id))  
+        conn.commit()  
+        return jsonify({"message": "Student added successfully"}), 201  
   
-class InternalMark(BaseModel):  
-    subject_id: int  
-    student_id: int  
-    internal_number: int  
-    marks_obtained: float  
-    max_marks: float  
+@app.route('/attendance', methods=['POST'])  
+def mark_attendance():  
+    conn = get_db_connection()  
+    cursor = conn.cursor(MySQLdb.cursors.DictCursor)  
+      
+    subject_id = request.json['subject_id']  
+    student_id = request.json['student_id']  
+    attendance_date = request.json['attendance_date']  
+    is_present = request.json['is_present']  
+      
+    cursor.execute('INSERT INTO subject_attendance (subject_id, student_id, attendance_date, is_present) VALUES (%s, %s, %s, %s)',  
+                   (subject_id, student_id, attendance_date, is_present))  
+    conn.commit()  
+    return jsonify({"message": "Attendance marked successfully"}), 201  
   
-class AssignmentMark(BaseModel):  
-    subject_id: int  
-    student_id: int  
-    assignment_number: int  
-    marks_obtained: float  
-    max_marks: float  
+@app.route('/internals', methods=['POST'])  
+def mark_internals():  
+    conn = get_db_connection()  
+    cursor = conn.cursor(MySQLdb.cursors.DictCursor)  
+      
+    subject_id = request.json['subject_id']  
+    student_id = request.json['student_id']  
+    internal_number = request.json['internal_number']  
+    marks_obtained = request.json['marks_obtained']  
+    max_marks = request.json['max_marks']  
+      
+    cursor.execute('INSERT INTO subject_internals (subject_id, student_id, internal_number, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)',  
+                   (subject_id, student_id, internal_number, marks_obtained, max_marks))  
+    conn.commit()  
+    return jsonify({"message": "Internal marks added successfully"}), 201  
   
-class AttendanceRecord(BaseModel):  
-    subject_id: int  
-    student_id: int  
-    date: str  
-    status: str  
+@app.route('/assignments', methods=['POST'])  
+def mark_assignments():  
+    conn = get_db_connection()  
+    cursor = conn.cursor(MySQLdb.cursors.DictCursor)  
+      
+    subject_id = request.json['subject_id']  
+    student_id = request.json['student_id']  
+    assignment_number = request.json['assignment_number']  
+    marks_obtained = request.json['marks_obtained']  
+    max_marks = request.json['max_marks']  
+      
+    cursor.execute('INSERT INTO subject_assignments (subject_id, student_id, assignment_number, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)',  
+                   (subject_id, student_id, assignment_number, marks_obtained, max_marks))  
+    conn.commit()  
+    return jsonify({"message": "Assignment marks added successfully"}), 201  
   
-@app.post("/add-student/")  
-def add_student(student: Student):  
-    connection = get_db_connection()  
-    try:  
-        with connection.cursor() as cursor:  
-            cursor.execute(  
-                "INSERT INTO Students (first_name, last_name, email, enrollment_number) VALUES (%s, %s, %s, %s)",  
-                (student.first_name, student.last_name, student.email, student.enrollment_number)  
-            )  
-        return {"message": "Student added successfully"}  
-    finally:  
-        connection.close()  
-  
-@app.delete("/remove-student/{student_id}")  
-def remove_student(student_id: int):  
-    connection = get_db_connection()  
-    try:  
-        with connection.cursor() as cursor:  
-            cursor.execute("DELETE FROM Students WHERE student_id = %s", (student_id,))  
-        return {"message": "Student removed successfully"}  
-    finally:  
-        connection.close()  
-
-# ... [previous code]  
-  
-# Endpoint to get a list of subjects  
-@app.get("/subjects", response_model=List[Subject])  
-def get_subjects():  
-    connection = get_db_connection()  
-    try:  
-        with connection.cursor() as cursor:  
-            cursor.execute("SELECT subject_code, subject_name, credit FROM Subjects")  
-            subjects_data = cursor.fetchall()  
-            subjects = [Subject(subject_code=row[0], subject_name=row[1], credit=row[2]) for row in subjects_data]  
-            return subjects  
-    finally:  
-        connection.close()  
-  
-# Endpoint to get a list of students by subject ID  
-@app.get("/students/{subject_id}", response_model=List[Student])  
-def get_students_by_subject(subject_id: int):  
-    connection = get_db_connection()  
-    try:  
-        with connection.cursor() as cursor:  
-            # Assuming there's a junction table 'SubjectStudents' that links students to subjects  
-            cursor.execute(  
-                "SELECT s.first_name, s.last_name, s.email, s.enrollment_number "  
-                "FROM Students s "  
-                "JOIN SubjectStudents ss ON s.student_id = ss.student_id "  
-                "WHERE ss.subject_id = %s", (subject_id,)  
-            )  
-            students_data = cursor.fetchall()  
-            students = [Student(first_name=row[0], last_name=row[1], email=row[2], enrollment_number=row[3]) for row in students_data]  
-            return students  
-    finally:  
-        connection.close()  
-  
-# ... [rest of the code]  
-
-# Add similar endpoints for add_subject, remove_subject, add_internal_mark, remove_internal_mark, add_assignment_mark, remove_assignment, add_attendance, remove_attendance  
-  
-@app.get("/download-subject-data/{subject_id}")  
-def download_subject_data(subject_id: int):  
-    connection = get_db_connection()  
-    try:  
-        with connection.cursor() as cursor:  
-            cursor.execute(  
-                "SELECT student_id, COUNT(case when status = 'Present' then 1 end) as present_count, COUNT(*) as total_count "  
-                "FROM Attendance WHERE subject_id = %s GROUP BY student_id", (subject_id,)  
-            )  
-            result = cursor.fetchall()  
-  
-            # Process result to calculate percentage  
-            processed_data = []  
-            for row in result:  
-                student_id = row[0]  
-                present_count = row[1]  
-                total_count = row[2]  
-                attendance_percentage = (present_count / total_count) * 100  
-                processed_data.append([student_id, attendance_percentage])  
-  
-            # Write processed data to CSV file  
-            with open(f'subject_{subject_id}_data.csv', 'w', newline='') as file:  
-                writer = csv.writer(file)  
-                writer.writerow(['Student ID', 'Attendance Percentage'])  
-                writer.writerows(processed_data)  
-  
-            return File(f'subject_{subject_id}_data.csv')  
-    finally:  
-        connection.close()  
-  
-# Run the app with: uvicorn main:app --reload  
+if __name__ == '__main__':  
+    app.run(debug=True)  
