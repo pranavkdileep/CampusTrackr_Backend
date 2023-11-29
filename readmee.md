@@ -18,7 +18,8 @@ USE college_management;
 -- Table for subjects  
 CREATE TABLE subjects (  
     subject_id INT AUTO_INCREMENT PRIMARY KEY,  
-    subject_name VARCHAR(100) NOT NULL,   
+    subject_name VARCHAR(100) NOT NULL,
+    subject_id INT 
 );  
    
 -- Table for students  
@@ -67,7 +68,7 @@ CREATE TABLE subject_assignments (
 INSERT INTO subjects (subject_name) VALUES ('Calculus');  
    
 -- Adding a new student  
-INSERT INTO students (student_name) VALUES ('John Doe');  
+INSERT INTO students (student_name,subject_id) VALUES ('John Doe',1);  
    
 -- Marking attendance for a student  
 INSERT INTO subject_attendance (subject_id, student_id, attendance_date, is_present) VALUES (1, 1, '2021-09-01', TRUE);  
