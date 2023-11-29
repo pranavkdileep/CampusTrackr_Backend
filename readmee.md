@@ -18,14 +18,14 @@ USE college_management;
 -- Table for subjects  
 CREATE TABLE subjects (  
     subject_id INT AUTO_INCREMENT PRIMARY KEY,  
-    subject_name VARCHAR(100) NOT NULL,
-    subject_id INT 
+    subject_name VARCHAR(100) NOT NULL 
 );  
    
 -- Table for students  
 CREATE TABLE students (  
     student_id INT AUTO_INCREMENT PRIMARY KEY,  
-    student_name VARCHAR(100) NOT NULL 
+    student_name VARCHAR(100) NOT NULL,
+    subject_id INT
 );  
    
 -- Table for subject attendance  
