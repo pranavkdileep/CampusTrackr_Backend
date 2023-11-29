@@ -35,7 +35,7 @@ CREATE TABLE subject_attendance (
     student_id INT,  
     attendance_date DATE,  
     is_present BOOLEAN, 
-    UNIQUE(subject_id, student_id)  
+    UNIQUE(subject_id)  
 );  
    
 -- Table for internals  
@@ -46,7 +46,7 @@ CREATE TABLE subject_internals (
     internal_number INT,  
     marks_obtained DECIMAL(5,2),  
     max_marks DECIMAL(5,2),  
-    UNIQUE(subject_id, student_id, internal_number)  
+    UNIQUE(subject_id,internal_number)  
 );  
    
 -- Table for assignments  
@@ -57,7 +57,7 @@ CREATE TABLE subject_assignments (
     assignment_number INT,  
     marks_obtained DECIMAL(5,2),  
     max_marks DECIMAL(5,2),  
-    UNIQUE(subject_id, student_id, assignment_number)  
+    UNIQUE(subject_id,assignment_number)  
 );  
 ```  
    
