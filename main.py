@@ -8,7 +8,7 @@ import csv
 import uvicorn
 import json
   
-load_dotenv()  
+# load_dotenv()  
 app = FastAPI()  
   
 
