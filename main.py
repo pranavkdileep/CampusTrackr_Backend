@@ -40,7 +40,7 @@ def get_all_subject():
     cursor = get_db_cursor(connection)
     cursor.execute("SELECT * FROM subjects")
     subjects = cursor.fetchall()
-    return [subject['subject_name'] for subject in subjects]
+    return subjects
 
 @app.get('/getallsubjects')
 async def get_all_subjects():
