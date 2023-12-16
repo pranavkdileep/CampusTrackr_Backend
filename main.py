@@ -1,5 +1,6 @@
 from typing import List  
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, UploadFile, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  
 from pydantic import BaseModel  
 from dotenv import load_dotenv  
 import os  
@@ -7,10 +8,18 @@ import MySQLdb
 import csv  
 import uvicorn
 import json
-  
-# load_dotenv()  
+
+load_dotenv()  
 app = FastAPI()  
   
+
+security = HTTPBearer()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    correct_token = os.getenv("TOKEN")
+    if credentials.credentials != correct_token:
+        raise HTTPException(status_code=403, detail="Invalid authorization token")
+    return credentials.credentials
 
 def get_db_connection():  
     connection = MySQLdb.connect(  
@@ -29,6 +38,9 @@ def get_db_connection():
 
 class Subject(BaseModel):
     subject_name: str
+
+class Dsubject(BaseModel):
+    subject_id: int
 
     
 def get_db_cursor(connection):  
@@ -49,28 +61,25 @@ async def get_all_subjects():
 
 
 @app.post('/addsubject')
-async def add_subject(subject: Subject):
+async def add_subject(subject: Subject,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("INSERT INTO subjects (subject_name) VALUES (%s)", (subject.subject_name,))
     return {"subject_name": subject.subject_name}
 
 @app.post('/removesubject')
-async def remove_subject(subject: Subject):
+async def remove_subject(subject: Dsubject, token: str = Depends(get_current_user)):
+    subject_id = subject.subject_id
+    print(subject_id)
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
-    subject_id = cursor.execute("SELECT subject_id FROM subjects WHERE subject_name = %s", (subject.subject_name,))
-    if subject_id:
-        subject_id = cursor.fetchone()['subject_id']
-        cursor.execute("DELETE FROM subjects WHERE subject_id = %b", (subject_id,))
-        cursor.execute("DELETE FROM students WHERE subject_id = %b", (subject_id,))
-        cursor.execute("DELETE FROM subject_assignments WHERE subject_id = %b", (subject_id,))
-        cursor.execute("DELETE FROM subject_attendance WHERE subject_id = %b", (subject_id,))
-        cursor.execute("DELETE FROM subject_internals WHERE subject_id = %b", (subject_id,))
-        print(subject_id)
-        return {"subject_name": subject.subject_name}
-    else:
-        return {"subject_name": "Subject not found"}
+    tables = ['subjects','students', 'subject_assignments', 'subject_attendance', 'subject_internals']
+    for table in tables:
+        query = f"DELETE FROM `{table}` WHERE `subject_id`=%s"
+        cursor.execute(query, (subject_id,))
+    connection.commit()
+    return {"subject_id": subject_id}
+
 #get student list by subject id SELECT * FROM students WHERE subject_id = 1; 
 @app.get('/getstudentlist/{subject_id}')
 async def get_student_list(subject_id: int):
@@ -89,7 +98,7 @@ class Student(BaseModel):
     subject_id: int
 
 @app.post('/addstudent')
-async def add_student(student: Student):
+async def add_student(student: Student,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("INSERT INTO students (student_name, subject_id) VALUES (%s, %s)", (student.student_name, student.subject_id))
@@ -100,7 +109,7 @@ class DStudent(BaseModel):
     student_id: int
 
 @app.post('/removestudent')
-async def remove_student(student: DStudent):
+async def remove_student(student: DStudent,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     tables = ['students', 'subject_assignments', 'subject_attendance', 'subject_internals']
@@ -121,7 +130,7 @@ class DAssignment(BaseModel):
     assignment_id: int
 
 @app.post('/addassignment')
-async def add_assignment(assignment: Assignment):
+async def add_assignment(assignment: Assignment,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("INSERT INTO subject_assignments (student_id, marks_obtained, subject_id, assignment_number, max_marks) VALUES (%s, %s, %s, %s, %s)", (assignment.student_id, assignment.marks_obtained, assignment.subject_id, assignment.assignment_number, assignment.max_marks))
@@ -129,7 +138,7 @@ async def add_assignment(assignment: Assignment):
     return {"student_id": assignment.student_id, "marks_obtained": assignment.marks_obtained, "subject_id": assignment.subject_id, "assignment_number": assignment.assignment_number, "max_marks": assignment.max_marks}
 
 @app.post('/removeassignment')
-async def remove_assignment(assignment: DAssignment):
+async def remove_assignment(assignment: DAssignment,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("DELETE FROM subject_assignments WHERE assignment_id = %s", (assignment.assignment_id,))
@@ -144,14 +153,14 @@ class Attendance(BaseModel):
 class DAttendance(BaseModel):
     attendance_id: int
 @app.post('/addattendance')
-async def add_attendance(attendance: Attendance):
+async def add_attendance(attendance: Attendance,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("INSERT INTO subject_attendance (student_id, subject_id, attendance_date, is_present) VALUES (%s, %s, %s, %s)", (attendance.student_id, attendance.subject_id, attendance.attendance_date, attendance.is_present))
     connection.commit()
     return {"student_id": attendance.student_id, "subject_id": attendance.subject_id, "attendance_date": attendance.attendance_date, "is_present": attendance.is_present}
 @app.post('/removeattendance')
-async def remove_attendance(attendance: DAttendance):
+async def remove_attendance(attendance: DAttendance,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("DELETE FROM subject_attendance WHERE attendance_id = %s", (attendance.attendance_id,))
@@ -169,19 +178,55 @@ class DInternal(BaseModel):
     internal_id: int
 
 @app.post('/addinternal')
-async def add_internal(internal: Internal):
+async def add_internal(internal: Internal,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("INSERT INTO subject_internals (student_id, subject_id, internal_number, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)", (internal.student_id, internal.subject_id, internal.internal_number, internal.marks_obtained, internal.max_marks))
     connection.commit()
     return {"student_id": internal.student_id, "subject_id": internal.subject_id, "internal_number": internal.internal_number, "marks_obtained": internal.marks_obtained, "max_marks": internal.max_marks}
 @app.post('/removeinternal')
-async def remove_internal(internal: DInternal):
+async def remove_internal(internal: DInternal,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     cursor.execute("DELETE FROM subject_internals WHERE internal_id = %s", (internal.internal_id,))
     connection.commit()
     return {"internal_id": internal.internal_id}
+
+class Performance(BaseModel):
+    student_id: int
+    student_name: str
+    total_lectures: int
+    lectures_present: int
+    attendance_percentage: float
+    average_internal_marks: float
+
+
+@app.get('/getperformance/{subject_id}', response_model=List[Performance])
+async def get_performance(subject_id: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("SELECT * FROM students WHERE subject_id = %s", (subject_id,))
+    students = cursor.fetchall()
+    performance = []
+    for student in students:
+        student_id = student['student_id']
+        student_name = student['student_name']
+
+        cursor.execute("SELECT COUNT(*) AS total FROM subject_attendance WHERE student_id = %s AND subject_id = %s", (student_id, subject_id))
+        total_lectures = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) AS present FROM subject_attendance WHERE student_id = %s AND subject_id = %s AND is_present = 1", (student_id, subject_id))
+        lectures_present = cursor.fetchone()['present']
+
+        attendance_percentage = (lectures_present / total_lectures) * 100 if total_lectures > 0 else 0
+
+        cursor.execute("SELECT AVG(marks_obtained) AS average FROM subject_internals WHERE student_id = %s AND subject_id = %s", (student_id, subject_id))
+        average_internal_marks_row = cursor.fetchone()
+        average_internal_marks = average_internal_marks_row['average'] if average_internal_marks_row['average'] is not None else 0.0
+
+        performance.append(Performance(student_id=student_id, student_name=student_name, total_lectures=total_lectures, lectures_present=lectures_present, attendance_percentage=attendance_percentage, average_internal_marks=average_internal_marks))
+    return performance
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
