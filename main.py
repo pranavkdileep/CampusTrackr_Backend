@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, File, UploadFile, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  
 from pydantic import BaseModel  
 from dotenv import load_dotenv  
+from datetime import datetime
 import os  
 import MySQLdb  
 import csv  
@@ -226,20 +227,30 @@ async def get_performance(subject_id: int):
 
         performance.append(Performance(student_id=student_id, student_name=student_name, total_lectures=total_lectures, lectures_present=lectures_present, attendance_percentage=attendance_percentage, average_internal_marks=average_internal_marks))
     return performance
+
+class AttendanceM(BaseModel):
+    student_id: int
+    present: bool
+
 class BulkAttendance(BaseModel):
     subject_id: int
-    attendance_date: str
-    is_present: bool
-    students_id: List[int]
+    date: str
+    bulk_attendance: List[AttendanceM]
 
-@app.post('/bulkattendance')
-async def bulk_attendance(bulk_attendance: BulkAttendance,token: str = Depends(get_current_user)):
+
+@app.post('/addbulkattendance')
+async def bulk_attendance(bulk_attendanceb: BulkAttendance, token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
-    for student_id in bulk_attendance.students_id:
-        cursor.execute("INSERT INTO subject_attendance (student_id, subject_id, attendance_date, is_present) VALUES (%s, %s, %s, %s)", (student_id, bulk_attendance.subject_id, bulk_attendance.attendance_date, bulk_attendance.is_present))
+    date_str = bulk_attendanceb.date
+    date_obj = datetime.strptime(date_str, '%m/%d/%Y')
+    formatted_date = date_obj.strftime('%Y-%m-%d')
+    for attendance in bulk_attendanceb.bulk_attendance:
+        query = "INSERT INTO subject_attendance (subject_id, attendance_date, student_id, is_present) VALUES (%s, %s, %s, %s)"
+        values = (bulk_attendanceb.subject_id, formatted_date, attendance.student_id, attendance.present)
+        cursor.execute(query, values)
+    
     connection.commit()
-    return {"subject_id": bulk_attendance.subject_id, "attendance_date": bulk_attendance.attendance_date, "is_present": bulk_attendance.is_present, "students_id": bulk_attendance.students_id}
 
 
 if __name__ == "__main__":

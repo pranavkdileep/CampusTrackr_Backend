@@ -34,8 +34,7 @@ CREATE TABLE subject_attendance (
     subject_id INT,  
     student_id INT,  
     attendance_date DATE,  
-    is_present BOOLEAN, 
-    UNIQUE(subject_id)  
+    is_present BOOLEAN 
 );  
    
 -- Table for internals  
