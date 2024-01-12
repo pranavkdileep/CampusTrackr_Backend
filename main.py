@@ -251,7 +251,28 @@ async def bulk_attendance(bulk_attendanceb: BulkAttendance, token: str = Depends
         cursor.execute(query, values)
     
     connection.commit()
+class Getattendance(BaseModel):
+    studentId: int
+    studentName: str
+    date: str
+    AttandanceId: int
+    present : bool
 
+@app.get('/getattendance/{student_id}', response_model=List[Getattendance])
+async def get_bulk_attendance(student_id: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("SELECT * FROM subject_attendance WHERE student_id = %s", (student_id,))
+    attendance = cursor.fetchall()
+    attendance_list = []
+    for attend in attendance:
+        student_id = attend['student_id']
+        student_name = 'pkd'
+        date = attend['attendance_date']
+        attendance_id = attend['attendance_id']
+        present = attend['is_present']
+        attendance_list.append(Getattendance(studentId=student_id, studentName=student_name, date=str(date), AttandanceId=attendance_id, present=present))
+    return attendance_list
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
