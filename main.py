@@ -185,6 +185,7 @@ async def add_internal(internal: Internal,token: str = Depends(get_current_user)
     cursor.execute("INSERT INTO subject_internals (student_id, subject_id, internal_number, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)", (internal.student_id, internal.subject_id, internal.internal_number, internal.marks_obtained, internal.max_marks))
     connection.commit()
     return {"student_id": internal.student_id, "subject_id": internal.subject_id, "internal_number": internal.internal_number, "marks_obtained": internal.marks_obtained, "max_marks": internal.max_marks}
+
 @app.post('/removeinternal')
 async def remove_internal(internal: DInternal,token: str = Depends(get_current_user)):
     connection = get_db_connection()
@@ -264,15 +265,85 @@ async def get_bulk_attendance(student_id: int):
     cursor = get_db_cursor(connection)
     cursor.execute("SELECT * FROM subject_attendance WHERE student_id = %s", (student_id,))
     attendance = cursor.fetchall()
+    cursor.execute("SELECT student_name FROM students WHERE student_id = %s", (student_id,))
+    student_name = cursor.fetchone()['student_name']
     attendance_list = []
     for attend in attendance:
         student_id = attend['student_id']
-        student_name = 'pkd'
+        student_name = student_name
         date = attend['attendance_date']
         attendance_id = attend['attendance_id']
         present = attend['is_present']
         attendance_list.append(Getattendance(studentId=student_id, studentName=student_name, date=str(date), AttandanceId=attendance_id, present=present))
     return attendance_list
+
+class UpdateAttendance(BaseModel):
+    attendance_id: int
+    present: bool
+
+@app.post('/updateattendance')
+async def update_attendance(attendance: UpdateAttendance, token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("UPDATE subject_attendance SET is_present = %s WHERE attendance_id = %s", (attendance.present, attendance.attendance_id))
+    connection.commit()
+    return {"attendance_id": attendance.attendance_id, "present": attendance.present}
+
+class internalStudentList(BaseModel):
+    student_id: int
+    marks_obtained: int
+
+class BulkInternal(BaseModel):
+    subject_id: int
+    internal_number: int
+    max_marks: int
+    bulk_internal: List[internalStudentList]
+
+@app.post('/addbulkinternal')
+async def bulk_internal(bulk_internalb: BulkInternal, token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    for internal in bulk_internalb.bulk_internal:
+        query = "INSERT INTO subject_internals (subject_id, internal_number, student_id, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)"
+        values = (bulk_internalb.subject_id, bulk_internalb.internal_number, internal.student_id, internal.marks_obtained, bulk_internalb.max_marks)
+        cursor.execute(query, values)
+    
+    connection.commit()
+    return {"subject_id": bulk_internalb.subject_id, "internal_number": bulk_internalb.internal_number, "max_marks": bulk_internalb.max_marks}
+class ListInternal(BaseModel):
+    student_id: int
+    student_name: str
+    marks_obtained: int
+    max_marks: int
+    internal_id: int
+@app.get('/getinternal/{subject_id}/{internal_number}', response_model=List[ListInternal])
+async def get_bulk_internal(subject_id: int, internal_number: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("SELECT * FROM subject_internals WHERE subject_id = %s AND internal_number = %s", (subject_id, internal_number))
+    internal = cursor.fetchall()
+    internal_list = []
+    for intern in internal:
+        student_id = intern['student_id']
+        cursor.execute("SELECT student_name FROM students WHERE student_id = %s", (student_id,))
+        student_name = cursor.fetchone()['student_name']
+        marks_obtained = intern['marks_obtained']
+        max_marks = intern['max_marks']
+        internal_id = intern['internal_id']
+        internal_list.append(ListInternal(student_id=student_id, student_name=student_name, marks_obtained=marks_obtained, max_marks=max_marks, internal_id=internal_id))
+    return internal_list
+
+class UpdateInternal(BaseModel):
+    internal_id: int
+    marks_obtained: int
+
+@app.post('/updateinternal')
+async def update_internal(internal: UpdateInternal, token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("UPDATE subject_internals SET marks_obtained = %s WHERE internal_id = %s", (internal.marks_obtained, internal.internal_id))
+    connection.commit()
+    return {"internal_id": internal.internal_id, "marks_obtained": internal.marks_obtained}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
