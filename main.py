@@ -345,5 +345,47 @@ async def update_internal(internal: UpdateInternal, token: str = Depends(get_cur
     connection.commit()
     return {"internal_id": internal.internal_id, "marks_obtained": internal.marks_obtained}
 
+class AssignmentStudentList(BaseModel):
+    student_id: int
+    student_name: str
+    marks_obtained: int
+    max_marks: int
+    assignment_id: int
+@app.get('/getassignment/{subject_id}/{assignment_number}', response_model=List[AssignmentStudentList])
+async def get_bulk_assignment(subject_id: int, assignment_number: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("SELECT * FROM subject_assignments WHERE subject_id = %s AND assignment_number = %s", (subject_id, assignment_number))
+    assignment = cursor.fetchall()
+    assignment_list = []
+    for assign in assignment:
+        student_id = assign['student_id']
+        cursor.execute("SELECT student_name FROM students WHERE student_id = %s", (student_id,))
+        student_name = cursor.fetchone()['student_name']
+        marks_obtained = assign['marks_obtained']
+        max_marks = assign['max_marks']
+        assignment_id = assign['assignment_id']
+        assignment_list.append(AssignmentStudentList(student_id=student_id, student_name=student_name, marks_obtained=marks_obtained, max_marks=max_marks, assignment_id=assignment_id))
+    return assignment_list
+class BulkAssignment(BaseModel):
+    student_id: int
+    marks_obtained: int
+class BulkAssignmentAdd(BaseModel):
+    subject_id: int
+    assignment_number: int
+    max_marks: int
+    bulk_assignment: List[BulkAssignment]
+@app.post('/addbulkassignment')
+async def bulk_assignment(bulk_assignmentb: BulkAssignmentAdd, token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    for assignment in bulk_assignmentb.bulk_assignment:
+        query = "INSERT INTO subject_assignments (subject_id, assignment_number, student_id, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)"
+        values = (bulk_assignmentb.subject_id, bulk_assignmentb.assignment_number, assignment.student_id, assignment.marks_obtained, bulk_assignmentb.max_marks)
+        cursor.execute(query, values)
+    
+    connection.commit()
+    return {"subject_id": bulk_assignmentb.subject_id, "assignment_number": bulk_assignmentb.assignment_number, "max_marks": bulk_assignmentb.max_marks}
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
