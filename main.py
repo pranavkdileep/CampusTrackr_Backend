@@ -380,12 +380,13 @@ async def bulk_assignment(bulk_assignmentb: BulkAssignmentAdd, token: str = Depe
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     for assignment in bulk_assignmentb.bulk_assignment:
-        query = "INSERT INTO subject_assignments (subject_id, assignment_number, student_id, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)"
-        values = (bulk_assignmentb.subject_id, bulk_assignmentb.assignment_number, assignment.student_id, assignment.marks_obtained, bulk_assignmentb.max_marks)
+        query = "INSERT INTO subject_assignments (subject_id, student_id, assignment_number, marks_obtained, max_marks) VALUES (%s, %s, %s, %s, %s)"
+        values = (bulk_assignmentb.subject_id, assignment.student_id, bulk_assignmentb.assignment_number, assignment.marks_obtained, bulk_assignmentb.max_marks)
         cursor.execute(query, values)
     
     connection.commit()
     return {"subject_id": bulk_assignmentb.subject_id, "assignment_number": bulk_assignmentb.assignment_number, "max_marks": bulk_assignmentb.max_marks}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -55,8 +55,7 @@ CREATE TABLE subject_assignments (
     student_id INT,  
     assignment_number INT,  
     marks_obtained DECIMAL(5,2),  
-    max_marks DECIMAL(5,2),  
-    UNIQUE(subject_id,assignment_number)  
+    max_marks DECIMAL(5,2)
 );  
 ```  
    
