@@ -3,3 +3,4 @@ mysqlclient
 fastapi
 uvicorn
 python-multipart
+Openpyxl

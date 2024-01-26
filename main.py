@@ -9,6 +9,8 @@ import MySQLdb
 import csv  
 import uvicorn
 import json
+import pandas as pd
+import io
 
 load_dotenv()  
 app = FastAPI()  
@@ -228,6 +230,19 @@ async def get_performance(subject_id: int):
 
         performance.append(Performance(student_id=student_id, student_name=student_name, total_lectures=total_lectures, lectures_present=lectures_present, attendance_percentage=attendance_percentage, average_internal_marks=average_internal_marks))
     return performance
+@app.get('/getperformance_dumy/{subject_id}', response_model=List[Performance])
+async def get_performance_dumy(subject_id: int):
+    # only send student id and name, others are demy costant value 0
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("SELECT * FROM students WHERE subject_id = %s", (subject_id,))
+    students = cursor.fetchall()
+    performance = []
+    for student in students:
+        student_id = student['student_id']
+        student_name = student['student_name']
+        performance.append(Performance(student_id=student_id, student_name=student_name, total_lectures=0, lectures_present=0, attendance_percentage=0, average_internal_marks=0))
+    return performance
 
 class AttendanceM(BaseModel):
     student_id: int
@@ -386,6 +401,36 @@ async def bulk_assignment(bulk_assignmentb: BulkAssignmentAdd, token: str = Depe
     
     connection.commit()
     return {"subject_id": bulk_assignmentb.subject_id, "assignment_number": bulk_assignmentb.assignment_number, "max_marks": bulk_assignmentb.max_marks}
+class updateAssignment(BaseModel):
+    assignment_id: int
+    marks_obtained: int
+@app.post('/updateassignment')
+async def update_assignment(assignment: updateAssignment, token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("UPDATE subject_assignments SET marks_obtained = %s WHERE assignment_id = %s", (assignment.marks_obtained, assignment.assignment_id))
+    connection.commit()
+    return {"assignment_id": assignment.assignment_id, "marks_obtained": assignment.marks_obtained}
+
+@app.post('/uploadstudentslist/{subject_id}')
+async def upload_students_list(subject_id: int, file: UploadFile = File(...), token: str = Depends(get_current_user)):
+    file_bytes = await file.read()
+    file_extension = file.filename.split('.')[-1]
+
+    if file_extension == 'xlsx':
+        df = pd.read_excel(io.BytesIO(file_bytes))
+    elif file_extension == 'csv':
+        df = pd.read_csv(io.StringIO(file_bytes.decode('utf-8')))
+    else:
+        return {"error": "Invalid file format"}
+
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    for index, row in df.iterrows():
+        cursor.execute("INSERT INTO students (student_name, subject_id) VALUES (%s, %s)", (row['student_name'], subject_id))
+    connection.commit()
+    return {"subject_id": subject_id}
+
 
 
 if __name__ == "__main__":
