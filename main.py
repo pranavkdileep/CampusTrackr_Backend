@@ -12,7 +12,7 @@ import json
 import pandas as pd
 import io
 
-load_dotenv()  
+# load_dotenv()  
 app = FastAPI()  
   
 
