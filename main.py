@@ -1,6 +1,7 @@
 from typing import List  
 from fastapi import FastAPI, HTTPException, File, UploadFile, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  
+from fastapi.responses import FileResponse
 from pydantic import BaseModel  
 from dotenv import load_dotenv  
 from datetime import datetime
@@ -11,8 +12,11 @@ import uvicorn
 import json
 import pandas as pd
 import io
+import random
+import xlsxwriter
+from datetime import timedelta
 
-# load_dotenv()  
+load_dotenv()  
 app = FastAPI()  
   
 
@@ -431,6 +435,167 @@ async def upload_students_list(subject_id: int, file: UploadFile = File(...), to
     connection.commit()
     return {"subject_id": subject_id}
 
+class FinalInterNal(BaseModel):
+    student_id: int
+    student_name: str
+    marks_obtained: int
+    max_marks: int
+
+@app.get('/downloadInternal/{subject_id}')
+def download_internal(subject_id: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    random_number = random.randint(100000, 999999)
+    file_name = f"internal_{random_number}.xlsx"
+    #create files folder if not exist
+    if not os.path.exists('files'):
+        os.makedirs('files')
+
+    workbook = xlsxwriter.Workbook("files/"+file_name)
+    file_name_path = "files/"+file_name
+    total_internals = 0
+    cursor.execute("SELECT MAX(internal_number) AS total FROM subject_internals WHERE subject_id = %s", (subject_id,))
+    total_internals = cursor.fetchone()['total']
+    for i in range(1, total_internals+1):
+        cursor.execute("SELECT * FROM subject_internals WHERE subject_id = %s AND internal_number = %s", (subject_id, i))
+        internals = cursor.fetchall()
+        internal_list = []
+        worksheet = workbook.add_worksheet(f"Internal {i}")
+        worksheet.write(0, 0, "Student ID")
+        worksheet.write(0, 1, "Student Name")
+        worksheet.write(0, 2, "Marks Obtained")
+        worksheet.write(0, 3, "Max Marks")
+        row = 1
+        for intern in internals:
+            worksheet.write(row, 0, intern['student_id'])
+            student_id = intern['student_id']
+            cursor.execute("SELECT student_name FROM students WHERE student_id = %s", (student_id,))
+            student_name = cursor.fetchone()['student_name']
+            worksheet.write(row, 1, student_name)
+            worksheet.write(row, 2, intern['marks_obtained'])
+            worksheet.write(row, 3, intern['max_marks'])
+            row += 1
+    workbook.close()
+    return FileResponse(file_name_path, media_type='application/octet-stream', filename=file_name)
+@app.get('/downloadAssignment/{subject_id}')
+def download_assignment(subject_id: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    random_number = random.randint(100000, 999999)
+    file_name = f"assignment_{random_number}.xlsx"
+    #create files folder if not exist
+    if not os.path.exists('files'):
+        os.makedirs('files')
+
+    workbook = xlsxwriter.Workbook("files/"+file_name)
+    file_name_path = "files/"+file_name
+    total_assignments = 0
+    cursor.execute("SELECT MAX(assignment_number) AS total FROM subject_assignments WHERE subject_id = %s", (subject_id,))
+    total_assignments = cursor.fetchone()['total']
+    for i in range(1, total_assignments+1):
+        cursor.execute("SELECT * FROM subject_assignments WHERE subject_id = %s AND assignment_number = %s", (subject_id, i))
+        assignments = cursor.fetchall()
+        assignment_list = []
+        worksheet = workbook.add_worksheet(f"Assignment {i}")
+        worksheet.write(0, 0, "Student ID")
+        worksheet.write(0, 1, "Student Name")
+        worksheet.write(0, 2, "Marks Obtained")
+        worksheet.write(0, 3, "Max Marks")
+        row = 1
+        for assign in assignments:
+            worksheet.write(row, 0, assign['student_id'])
+            student_id = assign['student_id']
+            cursor.execute("SELECT student_name FROM students WHERE student_id = %s", (student_id,))
+            student_name = cursor.fetchone()['student_name']
+            worksheet.write(row, 1, student_name)
+            worksheet.write(row, 2, assign['marks_obtained'])
+            worksheet.write(row, 3, assign['max_marks'])
+            row += 1
+    workbook.close()
+    return FileResponse(file_name_path, media_type='application/octet-stream', filename=file_name)
+@app.get('/downloadAttendance/{subject_id}')
+def download_attendance(subject_id: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    random_number = random.randint(100000, 999999)
+    file_name = f"attendance_{random_number}.xlsx"
+    #create files folder if not exist
+    if not os.path.exists('files'):
+        os.makedirs('files')
+
+    workbook = xlsxwriter.Workbook("files/"+file_name)
+    file_name_path = "files/"+file_name
+    cursor.execute("SELECT * FROM subject_attendance WHERE subject_id = %s", (subject_id,))
+    attendance = cursor.fetchall()
+    attendance_list = []
+    worksheet = workbook.add_worksheet(f"Attendance")
+    worksheet.write(0, 0, "Student ID")
+    worksheet.write(0, 1, "Student Name")
+    worksheet.write(0, 2, "Date")
+    worksheet.write(0, 3, "Present")
+    row = 1
+    for attend in attendance:
+        worksheet.write(row, 0, attend['student_id'])
+        student_id = attend['student_id']
+        cursor.execute("SELECT student_name FROM students WHERE student_id = %s", (student_id,))
+        student_name = cursor.fetchone()['student_name']
+        worksheet.write(row, 1, student_name)
+        worksheet.write(row, 2, str(attend['attendance_date']))
+        worksheet.write(row, 3, attend['is_present'])
+        row += 1
+    workbook.close()
+    return FileResponse(file_name_path, media_type='application/octet-stream', filename=file_name)
+
+@app.get('/downloadPerformance/{subject_id}')
+# reurns performance in excel with student id name total lectures present lectures attendance percentage and average internal marks (the average internal make is calculated by sum of attendance present + average internal marks+ average assignment marks)
+def download_performance(subject_id: int):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    random_number = random.randint(100000, 999999)
+    file_name = f"performance_{random_number}.xlsx"
+    #create files folder if not exist
+    if not os.path.exists('files'):
+        os.makedirs('files')
+
+    workbook = xlsxwriter.Workbook("files/"+file_name)
+    file_name_path = "files/"+file_name
+    cursor.execute("SELECT * FROM students WHERE subject_id = %s", (subject_id,))
+    students = cursor.fetchall()
+    worksheet = workbook.add_worksheet(f"Performance")
+    worksheet.write(0, 0, "Student ID")
+    worksheet.write(0, 1, "Student Name")
+    worksheet.write(0, 2, "Total Lectures")
+    worksheet.write(0, 3, "Lectures Present")
+    worksheet.write(0, 4, "Attendance Percentage")
+    worksheet.write(0, 5, "Average Internal Marks")
+    row = 1
+    for student in students:
+        student_id = student['student_id']
+        student_name = student['student_name']
+
+        cursor.execute("SELECT COUNT(*) AS total FROM subject_attendance WHERE student_id = %s AND subject_id = %s", (student_id, subject_id))
+        total_lectures = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) AS present FROM subject_attendance WHERE student_id = %s AND subject_id = %s AND is_present = 1", (student_id, subject_id))
+        lectures_present = cursor.fetchone()['present']
+
+        attendance_percentage = (lectures_present / total_lectures) * 100 if total_lectures > 0 else 0
+
+        cursor.execute("SELECT AVG(marks_obtained) AS average FROM subject_internals WHERE student_id = %s AND subject_id = %s", (student_id, subject_id))
+        average_internal_marks_row = cursor.fetchone()
+        average_internal_marks = average_internal_marks_row['average'] if average_internal_marks_row['average'] is not None else 0.0
+
+        worksheet.write(row, 0, student_id)
+        worksheet.write(row, 1, student_name)
+        worksheet.write(row, 2, total_lectures)
+        worksheet.write(row, 3, lectures_present)
+        worksheet.write(row, 4, attendance_percentage)
+        worksheet.write(row, 5, average_internal_marks)
+        row += 1
+    workbook.close()
+    return FileResponse(file_name_path, media_type='application/octet-stream', filename=file_name)
+    
+    
 
 
 if __name__ == "__main__":
