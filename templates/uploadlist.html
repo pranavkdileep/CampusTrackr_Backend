@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload XLS File</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-96">
+        <h1 class="text-2xl font-bold mb-6">Upload XLS File</h1>
+        <form id="uploadForm" action="#" method="post" enctype="multipart/form-data">
+            <div class="mb-4">
+                <label for="fileInput" class="block text-sm font-medium text-gray-600">Choose XLS File</label>
+                <input type="file" id="fileInput" name="file" accept=".xls, .xlsx"
+                    class="mt-1 p-2 border border-gray-300 rounded w-full">
+            </div>
+            <button type="button" onclick="uploadFile()"
+                class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300">
+                Upload
+            </button>
+        </form>
+    </div>
+
+    <script>
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const url = window.location.pathname.split('/');
+                const subid = url[url.length - 2];
+                const token = url[url.length - 1];
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch(`https://upgraded-space-computing-machine-944j75vw5rp2px4p-8000.preview.app.github.dev/uploadstudentslist/${subid}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: formData,
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(`Subid: ${data.subid}`);
+                        // You can use the subid as needed
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error uploading file. Please try again.');
+                    });
+            } else {
+                alert('Please choose a file to upload.');
+            }
+        }
+    </script>
+</body>
+
+</html>

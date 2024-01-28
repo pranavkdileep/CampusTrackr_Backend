@@ -1,7 +1,7 @@
 from typing import List  
 from fastapi import FastAPI, HTTPException, File, UploadFile, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel  
 from dotenv import load_dotenv  
 from datetime import datetime
@@ -434,6 +434,7 @@ async def upload_students_list(subject_id: int, file: UploadFile = File(...), to
         cursor.execute("INSERT INTO students (student_name, subject_id) VALUES (%s, %s)", (row['student_name'], subject_id))
     connection.commit()
     return {"subject_id": subject_id}
+
 
 class FinalInterNal(BaseModel):
     student_id: int
