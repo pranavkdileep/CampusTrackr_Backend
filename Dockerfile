@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code to the working directory
 COPY . .
 
+RUN mkdir -p /app/files
+RUN chmod 777 /app/files
+
 # Expose the port on which the FastAPI server will run
 EXPOSE 8000
 
