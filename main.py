@@ -112,9 +112,9 @@ async def login(facultie: Login):
     cursor.execute("SELECT * FROM faculties WHERE facultie_id = %s AND facultie_password = %s", (facultie.facultie_id, facultie.facultie_password))
     facultie = cursor.fetchone()
     if facultie is None:
-        return {"error": "Invalid credentials"}
+        return {"login": "false"}
     else:
-        return {"facultie_id": facultie['facultie_id'], "facultie_name": facultie['facultie_name']}
+        return {"login": "true"}
 class adminlogin(BaseModel):
     admin_password: str
 @app.post('/adminlogin')
