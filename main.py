@@ -45,6 +45,7 @@ def get_db_connection():
 
 class Subject(BaseModel):
     subject_name: str
+    facultie_id: int
 
 class Dsubject(BaseModel):
     subject_id: int
@@ -61,9 +62,15 @@ def get_all_subject():
     subjects = cursor.fetchall()
     return subjects
 
-@app.get('/getallsubjects')
-async def get_all_subjects():
-    subjects = get_all_subject()
+@app.get('/getallsubjects/{facultie_id}')
+async def get_all_subjects(facultie_id: int, token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    if facultie_id == 0:
+        cursor.execute("SELECT * FROM subjects")
+    else:
+        cursor.execute("SELECT * FROM subjects WHERE facultie_id = %s", (facultie_id,))
+    subjects = cursor.fetchall()
     return subjects
 
 
@@ -71,8 +78,53 @@ async def get_all_subjects():
 async def add_subject(subject: Subject,token: str = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
-    cursor.execute("INSERT INTO subjects (subject_name) VALUES (%s)", (subject.subject_name,))
+    cursor.execute("INSERT INTO subjects (subject_name, facultie_id) VALUES (%s, %s)", (subject.subject_name, subject.facultie_id))
     return {"subject_name": subject.subject_name}
+class facultie(BaseModel):
+    facultie_name: str
+    facultie_password: str
+class Dfacultie(BaseModel):
+    facultie_id: int
+@app.post('/addfacultie')
+async def add_facultie(facultie: facultie,token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("INSERT INTO faculties (facultie_name, facultie_password) VALUES (%s, %s)", (facultie.facultie_name, facultie.facultie_password))
+    facultie_id = cursor.lastrowid
+    return {"facultie_id": facultie_id, "facultie_name": facultie.facultie_name}
+
+@app.post('/removefacultie')
+async def remove_facultie(facultie: Dfacultie,token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("DELETE FROM faculties WHERE facultie_id = %s", (facultie.facultie_id,))
+    connection.commit()
+    return {"facultie_id": facultie.facultie_id}
+
+class Login(BaseModel):
+    facultie_id: int
+    facultie_password: str
+
+@app.post('/login')
+async def login(facultie: Login):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("SELECT * FROM faculties WHERE facultie_id = %s AND facultie_password = %s", (facultie.facultie_id, facultie.facultie_password))
+    facultie = cursor.fetchone()
+    if facultie is None:
+        return {"error": "Invalid credentials"}
+    else:
+        return {"facultie_id": facultie['facultie_id'], "facultie_name": facultie['facultie_name']}
+class adminlogin(BaseModel):
+    admin_password: str
+@app.post('/adminlogin')
+async def adminlogin(admin: adminlogin):
+    admin_password = os.getenv("ADMIN_PASSWORD")
+    if admin_password == admin.admin_password:
+        return {"admin": "true"}
+    else:
+        return {"admin": "false"}
+        
 
 @app.post('/removesubject')
 async def remove_subject(subject: Dsubject, token: str = Depends(get_current_user)):
