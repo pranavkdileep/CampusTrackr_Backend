@@ -673,7 +673,18 @@ def download_performance(subject_id: int):
     workbook.close()
     return FileResponse(file_name_path, media_type='application/octet-stream', filename=file_name)
     
-    
+
+@app.get('/setupDatabase')
+async def setup_database():
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("CREATE TABLE IF NOT EXISTS faculties (facultie_id INT AUTO_INCREMENT PRIMARY KEY, facultie_name VARCHAR(255), facultie_password VARCHAR(255))")
+    cursor.execute("CREATE TABLE IF NOT EXISTS subjects (subject_id INT AUTO_INCREMENT PRIMARY KEY, subject_name VARCHAR(255), facultie_id INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS students (student_id INT AUTO_INCREMENT PRIMARY KEY, student_name VARCHAR(255), subject_id INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS subject_assignments (assignment_id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, marks_obtained INT, subject_id INT, assignment_number INT, max_marks INT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS subject_attendance (attendance_id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, subject_id INT, attendance_date DATE, is_present BOOLEAN)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS subject_internals (internal_id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, subject_id INT, internal_number INT, marks_obtained INT, max_marks INT)")
+    return {"message": "Database setup successful"}
 
 
 if __name__ == "__main__":
