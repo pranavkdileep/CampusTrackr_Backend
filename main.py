@@ -112,6 +112,18 @@ async def remove_facultie(facultie: Dfacultie,token: str = Depends(get_current_u
     connection.commit()
     return {"facultie_id": facultie.facultie_id}
 
+class ChangePassword(BaseModel):
+    facultie_id: int
+    new_password: str
+
+@app.post('/changepassword')
+async def change_password(facultie: ChangePassword,token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("UPDATE faculties SET facultie_password = %s WHERE facultie_id = %s", (facultie.new_password, facultie.facultie_id))
+    connection.commit()
+    return {"facultie_id": facultie.facultie_id}
+
 class Login(BaseModel):
     facultie_id: int
     facultie_password: str
