@@ -16,7 +16,7 @@ import random
 import xlsxwriter
 from datetime import timedelta
 
-load_dotenv()  
+# load_dotenv()  
 app = FastAPI()  
   
 
@@ -92,6 +92,17 @@ async def add_facultie(facultie: facultie,token: str = Depends(get_current_user)
     cursor.execute("INSERT INTO faculties (facultie_name, facultie_password) VALUES (%s, %s)", (facultie.facultie_name, facultie.facultie_password))
     facultie_id = cursor.lastrowid
     return {"facultie_id": facultie_id, "facultie_name": facultie.facultie_name}
+class Faculty(BaseModel):
+    facultie_id: int
+    facultie_name: str
+    facultie_password: str
+@app.get('/getallfaculties')
+async def get_all_faculties(token: str = Depends(get_current_user)):
+    connection = get_db_connection()
+    cursor = get_db_cursor(connection)
+    cursor.execute("SELECT * FROM faculties")
+    faculties = cursor.fetchall()
+    return faculties
 
 @app.post('/removefacultie')
 async def remove_facultie(facultie: Dfacultie,token: str = Depends(get_current_user)):
@@ -104,6 +115,8 @@ async def remove_facultie(facultie: Dfacultie,token: str = Depends(get_current_u
 class Login(BaseModel):
     facultie_id: int
     facultie_password: str
+
+
 
 @app.post('/login')
 async def login(facultie: Login):
