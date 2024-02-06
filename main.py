@@ -29,7 +29,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return credentials.credentials
 
 def get_db_connection():  
-    if os.getenv("SSL_MODE") == "REQUIRED":  
+    if os.getenv("SSL_MODE") == "true":  
         connection = MySQLdb.connect(  
             host=os.getenv("DB_HOST"),  
             user=os.getenv("DB_USERNAME"),  
