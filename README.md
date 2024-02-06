@@ -1,4 +1,5 @@
 
+
 <p align="center">
  <img width="100px" src="https://github.com/pranavkdileep/CampusTrackr_Backend/blob/main/Docs/icon%20(2).png?raw=true" align="center" alt=":package: Deploy CampusTrackr_Backend" />
  <h2 align="center">:package: Deploy CampusTrackr_Backend</h2>
@@ -56,7 +57,20 @@ The following diagram illustrates the architecture and the workflow of the proje
     +-----------------+      +-----------------+      +-----------------+
 
 ## Running On Server
+Tutorial Video
 
+ENV Example :
+
+    DB_HOST=aws.connect.psdb.cloud
+    DB_USERNAME=6k6cemv23561hs4rmkmf
+    DB_PASSWORD=pscale_pw_CcYwSoG4zi16pJ5laqRd
+    DB_NAME=student
+    DB_PORT=3306
+    SSL_MODE=false
+    TOKEN=12345678
+    ADMIN_PASSWORD=12345678
+
+For Setup Easypanel on Your Cloud Server Watch The Video Click Here
 
 
 ## Running Locally
