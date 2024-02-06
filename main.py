@@ -17,7 +17,7 @@ import xlsxwriter
 from datetime import timedelta
 
 # load_dotenv()  
-app = FastAPI()  
+app = FastAPI(docs_url=None, redoc_url=None)  
   
 
 security = HTTPBearer()
