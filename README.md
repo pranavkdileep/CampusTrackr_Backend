@@ -59,7 +59,7 @@ The following diagram illustrates the architecture and the workflow of the proje
 ## Running On Server
 Tutorial Video
 
-<video src="https://github.com/pranavkdileep/CampusTrackr_Backend/raw/main/Docs/Screencast%20from%202024-02-06%2011-04-39.webm"></video>
+https://github.com/pranavkdileep/CampusTrackr_Backend/raw/main/Docs/Screencast%20from%202024-02-06%2011-04-39.webm
 
 ENV Example :
 
