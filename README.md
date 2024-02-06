@@ -34,7 +34,14 @@
 
 ## Demo
 
-[deploy-python-fastapi-in-vercel.vercel.app](https://deploy-python-fastapi-in-vercel.vercel.app)
+URL : https://pranavkd-campus.hf.space/ 
+
+KEY : 12345678
+
+ADMIN ID : 0
+
+ADMIN PASSWORD : 12345678
+
 
 ## How it Works
 
