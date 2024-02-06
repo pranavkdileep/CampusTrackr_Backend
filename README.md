@@ -5,6 +5,7 @@
  <h2 align="center">:package: Deploy CampusTrackr_Backend</h2>
  <p align="center">This document provides a step-by-step guide on how to deploy the CampusTrackr_Backend, a cloud-based software platform for the education domain1. The CampusTrackr_Backend is a GitHub repository that contains the source code and configuration files for the backend services of CampusTrack2. By following this guide, you will be able to set up and run the CampusTrackr_Backend on your own server or cloud provider.</p>
 </p>
+For Client Project : https://github.com/pranavkdileep/CampusTracker-Cloud-ANDROID
 
   <p align="center">
     <a href="https://github.com/pranavkdileep/CampusTrackr_Backend/issues">
