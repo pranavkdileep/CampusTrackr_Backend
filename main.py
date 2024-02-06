@@ -32,7 +32,8 @@ def get_db_connection():
     if os.getenv("SSL_MODE") == "true":  
         connection = MySQLdb.connect(  
             host=os.getenv("DB_HOST"),  
-            user=os.getenv("DB_USERNAME"),  
+            user=os.getenv("DB_USERNAME"),
+            port=int(os.getenv("DB_PORT")),  
             passwd=os.getenv("DB_PASSWORD"),  
             db=os.getenv("DB_NAME"),  
             autocommit=True,  
@@ -44,7 +45,8 @@ def get_db_connection():
     else:
         connection = MySQLdb.connect(  
             host=os.getenv("DB_HOST"),  
-            user=os.getenv("DB_USERNAME"),  
+            user=os.getenv("DB_USERNAME"),
+            port=int(os.getenv("DB_PORT")),  
             passwd=os.getenv("DB_PASSWORD"),  
             db=os.getenv("DB_NAME"),  
             autocommit=True  
