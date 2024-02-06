@@ -44,7 +44,7 @@ The following diagram illustrates the architecture and the workflow of the proje
 
     +-----------------+      +-----------------+      +-----------------+
     |                 |      |                 |      |                 |
-    |  Mobile App     | <--> |  Backend Server | <--> |  MongoDB Server |
+    |  Mobile App     | <--> |  Backend Server | <--> |  MySql Server |
     |                 |      |                 |      |                 |
     +-----------------+      +-----------------+      +-----------------+
 
