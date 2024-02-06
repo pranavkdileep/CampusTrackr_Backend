@@ -32,21 +32,22 @@ def get_db_connection():
     if os.getenv("SSL_MODE") == "REQUIRED":  
         connection = MySQLdb.connect(  
             host=os.getenv("DB_HOST"),  
-            user=os.getenv("DB_USER"),  
+            user=os.getenv("DB_USERNAME"),  
             passwd=os.getenv("DB_PASSWORD"),  
-            port=int(os.getenv("DB_PORT")),
             db=os.getenv("DB_NAME"),  
-            ssl={'ca': os.getenv("SSL_CA")},  
-            cursorclass=MySQLdb.cursors.DictCursor  
+            autocommit=True,  
+            ssl_mode="VERIFY_IDENTITY",  
+            ssl={  
+                "ca": "/etc/ssl/certs/ca-certificates.crt"  
+            }  
         )
     else:
         connection = MySQLdb.connect(  
             host=os.getenv("DB_HOST"),  
-            user=os.getenv("DB_USER"),  
-            passwd=os.getenv("DB_PASSWORD"), 
-            port=int(os.getenv("DB_PORT")), 
+            user=os.getenv("DB_USERNAME"),  
+            passwd=os.getenv("DB_PASSWORD"),  
             db=os.getenv("DB_NAME"),  
-            cursorclass=MySQLdb.cursors.DictCursor  
+            autocommit=True  
         )
     return connection  
   
