@@ -59,6 +59,8 @@ The following diagram illustrates the architecture and the workflow of the proje
 ## Running On Server
 Tutorial Video
 
+<video src="https://github.com/pranavkdileep/CampusTrackr_Backend/raw/main/Docs/Screencast%20from%202024-02-06%2011-04-39.webm"></video>
+
 ENV Example :
 
     DB_HOST=aws.connect.psdb.cloud
@@ -69,6 +71,7 @@ ENV Example :
     SSL_MODE=false
     TOKEN=12345678
     ADMIN_PASSWORD=12345678
+For Setup Database Go To The Url Once `https://{server ip:8000 or domain}/setupDatabase`
 
 For Setup Easypanel on Your Cloud Server Watch The Video Click Here
 
