@@ -58,6 +58,7 @@ The following diagram illustrates the architecture and the workflow of the proje
 
 ## Running On Server
 Tutorial Video
+
 [Screencast from 2024-02-06 11-04-39.webm](https://github.com/pranavkdileep/CampusTrackr_Backend/assets/91619846/4069f664-bb83-4ba1-a09c-87947b9b3b3f)
 
 
