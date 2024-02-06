@@ -48,6 +48,7 @@ def get_db_connection():
             user=os.getenv("DB_USERNAME"),
             port=int(os.getenv("DB_PORT")),  
             passwd=os.getenv("DB_PASSWORD"),  
+            ssl_mode="DISABLED",
             db=os.getenv("DB_NAME"),  
             autocommit=True  
         )
