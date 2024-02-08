@@ -509,6 +509,9 @@ async def update_assignment(assignment: updateAssignment, token: str = Depends(g
 async def upload_students_list(subject_id: int, file: UploadFile = File(...), token: str = Depends(get_current_user)):
     file_bytes = await file.read()
     file_extension = file.filename.split('.')[-1]
+    with open(f'files/{file.filename}', 'wb') as f:
+        f.write(file_bytes)
+        
 
     if file_extension == 'xlsx':
         df = pd.read_excel(io.BytesIO(file_bytes))
