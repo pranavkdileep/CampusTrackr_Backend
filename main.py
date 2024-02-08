@@ -520,7 +520,10 @@ async def upload_students_list(subject_id: int, file: UploadFile = File(...), to
     connection = get_db_connection()
     cursor = get_db_cursor(connection)
     for index, row in df.iterrows():
-        cursor.execute("INSERT INTO students (student_name, subject_id) VALUES (%s, %s)", (row['student_name'], subject_id))
+        try:
+            cursor.execute("INSERT INTO students (student_name, subject_id) VALUES (%s, %s)", (row['student_name'], subject_id))
+        except:
+            return {"error": "Error in inserting student"}
     connection.commit()
     return {"subject_id": subject_id}
 

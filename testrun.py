@@ -5,9 +5,9 @@ import io
 app = FastAPI()
 
 @app.post("/uploadfiles/")
-async def create_upload_files(upload_file: UploadFile = File(...)):
-    file_bytes = await upload_file.read()
-    file_extension = upload_file.filename.split('.')[-1]
+async def upload_students_list(file: UploadFile = File(...)):
+    file_bytes = await file.read()
+    file_extension = file.filename.split('.')[-1]
 
     if file_extension == 'xlsx':
         df = pd.read_excel(io.BytesIO(file_bytes))
@@ -16,8 +16,10 @@ async def create_upload_files(upload_file: UploadFile = File(...)):
     else:
         return {"error": "Invalid file format"}
 
-    first_column = df.iloc[:, 0].tolist()
-    return {"data_in_file": first_column}
+    for index, row in df.iterrows():
+        print(row)
+    
+    return {"subject_id"}
 
 if __name__ == "__main__":
     import uvicorn
